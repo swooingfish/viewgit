@@ -12,31 +12,6 @@ function debug($msg)
 	}
 }
 
-function fix_encoding($in_str)
-{
-	$cur_encoding = mb_detect_encoding($in_str) ;
-	if($cur_encoding == "UTF-8" && mb_check_encoding($in_str,"UTF-8")) {
-		return $in_str;
-	} else {
-		return utf8_encode($in_str);
-	}
-}
-
-/**
- * Format author's name & wrap it to links etc.
- */
-function format_author($author)
-{
-	global $page;
-
-	if (isset($page['project'])) {
-		// FIXME 'h' - use only if available
-		return '<a href="'. makelink(array('a' => 'search', 'p' => $page['project'], 'h' => 'HEAD', 'st' => 'author', 's' => $author)) .'">'. htmlentities_wrapper($author) .'</a>';
-	} else {
-		return htmlentities_wrapper($author);
-	}
-}
-
 /**
  * Formats "git diff" output into xhtml.
  * @return array(array of filenames, xhtml)
@@ -88,11 +63,7 @@ function get_project_info($name)
 
 	$info = $conf['projects'][$name];
 	$info['name'] = $name;
-
-	// If description is not set, read it from the repository's description
-	if (!isset($info['description'])) {
-		$info['description'] = file_get_contents($info['repo'] .'/description');
-	}
+	$info['description'] = file_get_contents($info['repo'] .'/description');
 
 	$headinfo = git_get_commit_info($name, 'HEAD');
 	$info['head_stamp'] = $headinfo['author_utcstamp'];
@@ -103,18 +74,12 @@ function get_project_info($name)
 	return $info;
 }
 
-function git_describe($project, $commit)
-{
-	$output = run_git($project, "describe --always ". escapeshellarg($commit));
-	return $output[0];
-}
-
 /**
  * Get diff between given revisions as text.
  */
 function git_diff($project, $from, $to)
 {
-	return join("\n", run_git($project, "diff \"$from..$to\""));
+	return join("\n", run_git($project, "diff $from..$to"));
 }
 
 function git_diffstat($project, $commit, $commit_base = null)
@@ -126,31 +91,9 @@ function git_diffstat($project, $commit, $commit_base = null)
 }
 
 /**
- * Get array of changed paths for a commit.
- */
-function git_get_changed_paths($project, $hash = 'HEAD')
-{
-	$result = array();
-	$affected_files = run_git($project, "show --pretty=\"format:\" --name-only $hash");
-	foreach ($affected_files as $file ) {
-		// The format above contains a blank line; Skip it.
-		if ($file == '') {
-			continue;
-		}
-
-		$output = run_git($project, "ls-tree $hash $file");
-		foreach ($output as $line) {
-			$parts = preg_split('/\s+/', $line, 4);
-			$result[] = array('name' => $parts[3], 'hash' => $parts[2]);
-		}
-	}
-	return $result;
-}
-
-/**
  * Get details of a commit: tree, parents, author/committer (name, mail, date), message
  */
-function git_get_commit_info($project, $hash = 'HEAD', $path = null)
+function git_get_commit_info($project, $hash = 'HEAD')
 {
 	global $conf;
 
@@ -159,12 +102,7 @@ function git_get_commit_info($project, $hash = 'HEAD', $path = null)
 	$info['message_full'] = '';
 	$info['parents'] = array();
 
-	$extra = '';
-	if (isset($path)) {
-		$extra = '-- '. escapeshellarg($path);
-	}
-
-	$output = run_git($project, "rev-list --header --max-count=1 $hash $extra");
+	$output = run_git($project, "rev-list --header --max-count=1 $hash");
 	// tree <h>
 	// parent <h>
 	// author <name> "<"<mail>">" <stamp> <timezone>
@@ -204,20 +142,6 @@ function git_get_commit_info($project, $hash = 'HEAD', $path = null)
 		}
 	}
 
-	// This is a workaround for the unlikely situation where a commit does
-	// not have a message. Such a commit can be created with the following
-	// command:
-	// git commit --allow-empty -m '' --cleanup=verbatim
-	if (!array_key_exists('message', $info)) {
-		$info['message'] = '(no message)';
-		$info['message_firstline'] = '(no message)';
-	}
-
-	$info['author_datetime'] = gmstrftime($conf['datetime_full'], $info['author_utcstamp']);
-	$info['author_datetime_local'] = gmstrftime($conf['datetime_full'], $info['author_stamp']) .' '. $info['author_timezone'];
-	$info['committer_datetime'] = gmstrftime($conf['datetime_full'], $info['committer_utcstamp']);
-	$info['committer_datetime_local'] = gmstrftime($conf['datetime_full'], $info['committer_stamp']) .' '. $info['committer_timezone'];
-
 	return $info;
 }
 
@@ -233,11 +157,6 @@ function git_get_heads($project)
 		$fullname = substr($line, 41);
 		$tmp = explode('/', $fullname);
 		$name = array_pop($tmp);
-		$pre = array_pop($tmp);
-		if ($pre != 'heads')
-		{
-			$name = $pre . '/' . $name;
-		}
 		$heads[] = array('h' => substr($line, 0, 40), 'fullname' => "$fullname", 'name' => "$name");
 	}
 
@@ -276,20 +195,15 @@ function git_get_path_info($project, $root_hash, $path)
 
 /**
  * Get revision list starting from given commit.
- * @param skip how many hashes to skip from the beginning
  * @param max_count number of commit hashes to return, or all if not given
  * @param start revision to start from, or HEAD if not given
  */
-function git_get_rev_list($project, $skip = 0, $max_count = null, $start = 'HEAD')
+function git_get_rev_list($project, $max_count = null, $start = 'HEAD')
 {
-	$cmd = "rev-list ";
-	if ($skip != 0) {
-		$cmd .= "--skip=$skip ";
-	}
+	$cmd = "rev-list $start";
 	if (!is_null($max_count)) {
-		$cmd .= "--max-count=$max_count ";
+		$cmd = "rev-list --max-count=$max_count $start";
 	}
-	$cmd .= $start;
 
 	return run_git($project, $cmd);
 }
@@ -372,7 +286,7 @@ function git_ref_list($project, $tags = true, $heads = true, $remotes = true)
 /**
  * Find commits based on search type and string.
  */
-function git_search_commits($project, $branch, $type, $string)
+function git_search_commits($project, $type, $string)
 {
 	// git log -sFOO
 	if ($type == 'change') {
@@ -390,7 +304,6 @@ function git_search_commits($project, $branch, $type, $string)
 	else {
 		die('Unsupported type');
 	}
-	$cmd .= ' '. $branch;
 	$lines = run_git($project, $cmd);
 
 	$result = array();
@@ -405,14 +318,14 @@ function git_search_commits($project, $branch, $type, $string)
 /**
  * Get shortlog entries for the given project.
  */
-function handle_shortlog($project, $hash = 'HEAD', $page = 0)
+function handle_shortlog($project, $hash = 'HEAD')
 {
 	global $conf;
 
 	$refs_by_hash = git_ref_list($project, true, true, $conf['shortlog_remote_labels']);
 
 	$result = array();
-	$revs = git_get_rev_list($project, $page * $conf['summary_shortlog'], $conf['summary_shortlog'], $hash);
+	$revs = git_get_rev_list($project, $conf['summary_shortlog'], $hash);
 	foreach ($revs as $rev) {
 		$info = git_get_commit_info($project, $rev);
 		$refs = array();
@@ -549,11 +462,6 @@ function run_git($project, $command)
 	$cmd = $conf['git'] ." --git-dir=". escapeshellarg($conf['projects'][$project]['repo']) ." $command";
 	$ret = 0;
 	exec($cmd, $output, $ret);
-	if ($conf['debug_command_trace']) {
-		static $count = 0;
-		$count++;
-		trigger_error("[$count]\$ $cmd [exit $ret]");
-	}
 	//if ($ret != 0) { die('FATAL: exec() for git failed, is the path properly configured?'); }
 	return $output;
 }
@@ -593,7 +501,7 @@ function validate_project($project)
  */
 function validate_hash($hash)
 {
-	if (!preg_match('/^[0-9a-z]{40}$/', $hash) && !preg_match('!^refs/(heads|tags)/[-_.0-9a-zA-Z/]+$!', $hash) && $hash !== 'HEAD') {
+	if (!preg_match('/^[0-9a-z]{40}$/', $hash) && !preg_match('!^refs/(heads|tags)/[-.0-9a-z]+$!', $hash) && $hash !== 'HEAD') {
 		die('Invalid hash');
 
 	}

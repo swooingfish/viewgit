@@ -16,15 +16,6 @@ $conf['git'] = 'git';
 // Use this if you have a lot of projects under a directory.
 //$conf['projects_glob'] = array('/path/to/*/.git', '/var/git/*.git');
 
-// If set, contains an array of projects to exclude.
-// Use this if you have set $conf['projects_glob'] and you
-// want to exclude just some projects.
-//$conf['projects_exclude'] = array('project1', 'project2');
-
-// Name and prefix for tar/gz & zip archives generated. Default is to use the
-// project name and version. Can be overridden in project config.
-$conf['archive_prefix'] = '{PROJECT}-{DESCRIBE}';
-
 $conf['datetime'] = '%Y-%m-%d %H:%M';
 
 // More complete format for commit page
@@ -34,7 +25,7 @@ $conf['datetime_full'] = '%Y-%m-%d %H:%M:%S';
 $conf['commit_message_maxlen'] = 50;
 
 // Maximum number of shortlog entries to show on the summary page
-$conf['summary_shortlog'] = 15;
+$conf['summary_shortlog'] = 30;
 
 // Maximum number of tags to show on the summary page
 $conf['summary_tags'] = 10;
@@ -75,7 +66,6 @@ $conf['rss_item_title'] = '{SHORTLOG} ({AUTHOR})';
 $conf['rss_item_description'] = '<pre>{LOG}</pre><b>{AUTHOR}</b> &lt;{AUTHOR_MAIL}&gt;<br /><pre>{DIFFSTAT}</pre>';
 
 $conf['debug'] = false;
-$conf['debug_command_trace'] = false;
 
 // Includes a small link to the ViewGit homepage on each page
 $conf['ad'] = true;
@@ -98,8 +88,5 @@ $conf['ad'] = true;
 $conf['style'] = 'default';
 
 if (!@include_once('localconfig.php')) {
-	header("Content-type: text/plain");
-	echo "ViewGit has not been configured yet, please read doc/README for installation instructions:\n\n";
-	require_once('doc/README');
-	die();
+	die('ViewGit has not been configured yet, please read doc/README.');
 }

@@ -1,11 +1,15 @@
 <?php
 echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 	<title><?php echo $page['title']; ?></title>
-	<link rel="stylesheet" href="<?php echo $conf['style']; ?>.css" type="text/css" />
+	<link rel="stylesheet" href="css/<?php echo $conf['style']; ?>.css" type="text/css" />
+	<link rel="stylesheet" href="css/tables.css" type="text/css" />
+	<script src="js/jquery-1.6.2.min.js"></script>
+	<script src="js/jquery.dataTables.min.js"></script>
+	<script src="js/main.js"></script>
 	<link rel="icon" type="image/png" href="favicon.png" />
 <?php
 if (isset($page['project'])) {
@@ -74,10 +78,9 @@ foreach ($page['links'] as $link => $params) {
 }
 ?>
  | 
-<form action="?" method="get" class="search">
+<form action="?" type="get" class="search">
 <input type="hidden" name="a" value="search" />
 <input type="hidden" name="p" value="<?php echo $page['project']; ?>" />
-<input type="hidden" name="h" value="<?php echo $page['commit_id']; ?>" />
 <select name="st">
 <?php
 $opts = array('commit', 'change', 'author', 'committer');

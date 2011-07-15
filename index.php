@@ -1,5 +1,4 @@
 <?php
-header('Content-type: text/html; charset=UTF-8');
 /** @file
  * The main "controller" file of ViewGit.
  *
@@ -10,16 +9,16 @@ header('Content-type: text/html; charset=UTF-8');
  */
 error_reporting(E_ALL | E_STRICT);
 
-require_once('inc/config.php');
-require_once('inc/functions.php');
-require_once('inc/plugins.php');
+require_once('app/inc/config.php');
+require_once('app/inc/functions.php');
+require_once('app/inc/plugins.php');
 
 // Include all plugins
-foreach (glob('plugins/*/main.php') as $plugin) {
+foreach (glob('app/plugins/*/main.php') as $plugin) {
 	require_once($plugin);
 
 	$parts = explode('/', $plugin);
-	$name = $parts[1];
+	$name = $parts[2];
 
 	$classname = "${name}plugin";
 	$inst = new $classname;
@@ -33,14 +32,11 @@ if (!$conf['debug']) {
 }
 
 if (isset($conf['auth_lib'])){
-	require_once("inc/auth_{$conf['auth_lib']}.php");
+	require_once("app/inc/auth_{$conf['auth_lib']}.php");
 	auth_check();
 }
 
 if (isset($conf['projects_glob'])) {
-	if (!isset($conf['projects_exclude'])) {
-		$conf['projects_exclude'] = array();
-	}
 	foreach ($conf['projects_glob'] as $glob) {
 		foreach (glob($glob) as $path) {
 			// Get the last part of the path before .git
@@ -52,9 +48,7 @@ if (isset($conf['projects_glob'])) {
 				@$i++;
 			}
 			$name = $name . $i;
-			if (!in_array($name, $conf['projects_exclude'])) {
-				$conf['projects'][$name] = array('repo' => $path);
-			}
+			$conf['projects'][$name] = array('repo' => $path);
 		}
 	}
 }
@@ -84,54 +78,30 @@ if ($action === 'index') {
  * archive - send a tree as an archive to client
  * @param p project
  * @param h tree hash
- * @param hb OPTIONAL base commit (trees can be part of multiple commits, this
- * one denotes which commit the user navigated from)
  * @param t type, "targz" or "zip"
  * @param n OPTIONAL name suggestion
  */
 elseif ($action === 'archive') {
 	$project = validate_project($_REQUEST['p']);
-	$info = get_project_info($project);
 	$tree = validate_hash($_REQUEST['h']);
 	$type = $_REQUEST['t'];
-	if (isset($_REQUEST['hb'])) {
-		$hb = validate_hash($_REQUEST['hb']);
-		$describe = git_describe($project, $hb);
-	}
 
-	// Archive prefix
-	$archive_prefix = '';
-	if (isset($info['archive_prefix'])) {
-		$archive_prefix = "{$info['archive_prefix']}";
-	}
-	elseif (isset($conf['archive_prefix'])) {
-		$archive_prefix = "{$conf['archive_prefix']}";
-	}
-	$archive_prefix = str_replace(array('{PROJECT}', '{DESCRIBE}'), array($project, $describe), $archive_prefix);
-
-	// Basename
 	$basename = "$project-tree-". substr($tree, 0, 7);
-	$basename = $archive_prefix;
 	if (isset($_REQUEST['n'])) {
-		$basename = "$basename-$_REQUEST[n]-". substr($tree, 0, 6);
-	}
-
-	$prefix_option = '';
-	if (isset($archive_prefix)) {
-		$prefix_option = "--prefix={$archive_prefix}/";
+		$basename = "$project-$_REQUEST[n]-". substr($tree, 0, 6);
 	}
 
 	if ($type === 'targz') {
 		header("Content-Type: application/x-tar-gz");
 		header("Content-Transfer-Encoding: binary");
 		header("Content-Disposition: attachment; filename=\"$basename.tar.gz\";");
-		run_git_passthru($project, "archive --format=tar $prefix_option $tree |gzip");
+		run_git_passthru($project, "archive --format=tar $tree |gzip");
 	}
 	elseif ($type === 'zip') {
 		header("Content-Type: application/x-zip");
 		header("Content-Transfer-Encoding: binary");
 		header("Content-Disposition: attachment; filename=\"$basename.zip\";");
-		run_git_passthru($project, "archive --format=zip $prefix_option $tree");
+		run_git_passthru($project, "archive --format=zip $tree");
 	}
 	else {
 		die('Invalid archive type requested');
@@ -177,7 +147,7 @@ elseif ($action === 'co') {
 	$filename = $gitdir .'/'. $r;
 
 	// make sure the request is legit (no reading of other files besides those under git projects)
-	if ($r === 'HEAD' || $r === 'info/refs' || preg_match('!^objects/info/(packs|http-alternates|alternates)$!', $r) > 0 || preg_match('!^objects/[0-9a-f]{2}/[0-9a-f]{38}$!', $r) > 0 || preg_match('!^objects/pack/pack-[0-9a-f]{40}\.(idx|pack)$!', $r)) {
+	if ($r === 'HEAD' || $r === 'info/refs' || preg_match('!^objects/info/(packs|http-alternates|alternates)$!', $r) > 0 || preg_match('!^objects/[0-9a-f]{2}/[0-9a-f]{38}$!', $r) > 0) {
 		if (file_exists($filename)) {
 			debug('OK, sending');
 			readfile($filename);
@@ -208,18 +178,17 @@ elseif ($action === 'commit') {
 
 	$page['author_name'] = $info['author_name'];
 	$page['author_mail'] = $info['author_mail'];
-	$page['author_datetime'] = $info['author_datetime'];
-	$page['author_datetime_local'] = $info['author_datetime_local'];
+	$page['author_datetime'] = gmstrftime($conf['datetime_full'], $info['author_utcstamp']);
+	$page['author_datetime_local'] = gmstrftime($conf['datetime_full'], $info['author_stamp']) .' '. $info['author_timezone'];
 	$page['committer_name'] = $info['committer_name'];
 	$page['committer_mail'] = $info['committer_mail'];
-	$page['committer_datetime'] = $info['committer_datetime'];
-	$page['committer_datetime_local'] = $info['committer_datetime_local'];
+	$page['committer_datetime'] = gmstrftime($conf['datetime_full'], $info['committer_utcstamp']);
+	$page['committer_datetime_local'] = gmstrftime($conf['datetime_full'], $info['committer_stamp']) .' '. $info['committer_timezone'];
 	$page['tree_id'] = $info['tree'];
 	$page['parents'] = $info['parents'];
 	$page['message'] = $info['message'];
 	$page['message_firstline'] = $info['message_firstline'];
 	$page['message_full'] = $info['message_full'];
-	$page['affected_files'] = git_get_changed_paths($page['project'], $page['commit_id']);
 
 }
 
@@ -245,9 +214,9 @@ elseif ($action === 'commitdiff') {
 	$page['message_full'] = $info['message_full'];
 	$page['author_name'] = $info['author_name'];
 	$page['author_mail'] = $info['author_mail'];
-	$page['author_datetime'] = $info['author_datetime'];
+	$page['author_datetime'] = gmstrftime($conf['datetime'], $info['author_utcstamp']);
 
-	$text = fix_encoding(git_diff($page['project'], "$hash^", $hash));
+	$text = git_diff($page['project'], "$hash^", $hash);
 	list($page['files'], $page['diffdata']) = format_diff($text);
 	//$page['diffdata'] = format_diff($text);
 }
@@ -286,7 +255,7 @@ elseif ($action === 'rss-log') {
 
 	$diffstat = strstr($conf['rss_item_description'], '{DIFFSTAT}');
 
-	$revs = git_get_rev_list($page['project'], 0, $conf['rss_max_items']);
+	$revs = git_get_rev_list($page['project'], $conf['rss_max_items']);
 	foreach ($revs as $rev) {
 		$info = git_get_commit_info($page['project'], $rev);
 		$link = $ext_url . makelink(array('a' => 'commit', 'p' => $page['project'], 'h' => $rev));
@@ -303,14 +272,13 @@ elseif ($action === 'rss-log') {
 		);
 	}
 
-	require('templates/rss.php');
+	require('app/templates/rss.php');
 	die();
 }
 
 /*
  * search - search project history
  * @param p project
- * @param h branch
  * @param st search type: commit,grep,author,committer,pickaxe
  * @param s string to search for
  */
@@ -323,14 +291,13 @@ elseif ($action === 'search') {
 	$page['commit_id'] = $info['h'];
 	$page['tree_id'] = $info['tree'];
 
-	$branch = validate_hash($_REQUEST['h']);
 	$type = $_REQUEST['st'];
 	$string = $_REQUEST['s'];
 
 	$page['search_t'] = $type;
 	$page['search_s'] = $string;
 
-	$commits = git_search_commits($page['project'], $branch, $type, $string);
+	$commits = git_search_commits($page['project'], $type, $string);
 	$shortlog = array();
 	foreach ($commits as $c) {
 		$info = git_get_commit_info($page['project'], $c);
@@ -343,7 +310,6 @@ elseif ($action === 'search') {
 			'refs' => array(),
 		);
 	}
-	$page['shortlog_no_more'] = true;
 	$page['shortlog'] = $shortlog;
 }
 
@@ -362,17 +328,12 @@ elseif ($action === 'shortlog') {
 	} else {
 		$page['ref'] = 'HEAD';
 	}
-	if (isset($_REQUEST['pg'])) {
-		$page['pg'] = intval($_REQUEST['pg']);
-	} else {
-		$page['pg'] = 0;
-	}
 
 	$info = git_get_commit_info($page['project'], $page['ref']);
 	$page['commit_id'] = $info['h'];
 	$page['tree_id'] = $info['tree'];
 
-	$page['shortlog'] = handle_shortlog($page['project'], $page['ref'], $page['pg']);
+	$page['shortlog'] = handle_shortlog($page['project'], $page['ref']);
 }
 elseif ($action === 'summary') {
 	$template = 'summary';
@@ -387,7 +348,6 @@ elseif ($action === 'summary') {
 	$page['shortlog'] = handle_shortlog($page['project']);
 
 	$page['tags'] = handle_tags($page['project'], $conf['summary_tags']);
-	$page['ref'] = 'HEAD';
 
 	$heads = git_get_heads($page['project']);
 	$page['heads'] = array();
@@ -496,20 +456,16 @@ elseif ($action === 'viewblob') {
 
 	$page['pathinfo'] = git_get_path_info($page['project'], $page['commit_id'], $page['path']);
 
-	$page['data'] = fix_encoding(join("\n", run_git($page['project'], "cat-file blob $page[hash]")));
-
-	$page['lastlog'] = git_get_commit_info($page['project'], 'HEAD', $page['path']);
+	$page['data'] = join("\n", run_git($page['project'], "cat-file blob $page[hash]"));
 
 	// GeSHi support
 	if ($conf['geshi'] && strpos($page['path'], '.')) {
 		$old_mask = error_reporting(E_ALL ^ E_NOTICE);
 		require_once($conf['geshi_path']);
-		$parts = explode('.', $page['path']);
-		$ext = array_pop($parts);
-		$geshi = new Geshi($page['data']);
-		$lang = $geshi->get_language_name_from_extension($ext);
+		$ext = array_pop(explode('.', $page['path']));
+		$lang = Geshi::get_language_name_from_extension($ext);
 		if (strlen($lang) > 0) {
-			$geshi->set_language($lang);
+			$geshi = new Geshi($page['data'], $lang);
 			if (is_int($conf['geshi_line_numbers'])) {
 				if ($conf['geshi_line_numbers'] == 0) {
 					$geshi->enable_line_numbers(GESHI_NORMAL_LINE_NUMBERS);
@@ -531,6 +487,6 @@ else {
 	die('Invalid action');
 }
 
-require 'templates/header.php';
-require "templates/$template.php";
-require 'templates/footer.php';
+require 'app/templates/header.php';
+require "app/templates/$template.php";
+require 'app/templates/footer.php';

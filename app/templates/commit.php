@@ -4,7 +4,7 @@
 <tbody>
 <tr>
 	<td>Author</td>
-	<td><?php echo format_author($page['author_name']); ?> &lt;<?php echo htmlentities_wrapper($page['author_mail']); ?>&gt;</td>
+	<td><?php echo htmlentities_wrapper($page['author_name']); ?> &lt;<?php echo htmlentities_wrapper($page['author_mail']); ?>&gt;</td>
 </tr>
 <tr>
 	<td>Author date</td>
@@ -16,7 +16,7 @@
 </tr>
 <tr>
 	<td>Committer</td>
-	<td><?php echo format_author($page['committer_name']); ?> &lt;<?php echo htmlentities_wrapper($page['committer_mail']); ?>&gt;</td>
+	<td><?php echo htmlentities_wrapper($page['committer_name']); ?> &lt;<?php echo htmlentities_wrapper($page['committer_mail']); ?>&gt;</td>
 </tr>
 <tr>
 	<td>Committer date</td>
@@ -47,24 +47,5 @@ foreach ($page['parents'] as $parent) {
 
 <div class="commitmessage"><pre><?php echo htmlentities_wrapper($page['message_full']); ?></pre></div>
 
-<div class="filelist">
-<table>
-<thead>
-<tr>
-	<th>Affected files:</th>
-</tr>
-</thead>
-<tbody>
-
-<?php
-foreach ($page['affected_files'] as $details) {
-	echo "<tr><td>";
-	echo "<a href=\"" . makelink(array('a' => 'viewblob', 'p' => $page['project'], 'h' => $details['hash'], 'f' => $details['name'])) . "\">$details[name]</a>";
-	echo "</td><td></td></tr>";
-}
-?>
-
-</tbody>
-</table>
-</div>
+<?php /* TODO: list of files changed */ ?>
 

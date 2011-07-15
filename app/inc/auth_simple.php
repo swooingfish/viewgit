@@ -57,7 +57,7 @@ global $page;
 
 
 	// Not signed in, display login page
-	require('templates/header.php');
+	require('app/templates/header.php');
 ?>
 	<h2>Login Required</h2>
 <?php if (isset($loginmessage)):?>
@@ -84,7 +84,7 @@ global $page;
 	</script>
 
 <?php
-	require('templates/footer.php');	
+	require('app/templates/footer.php');	
 	die;
 }
 ?>

@@ -1,0 +1,9 @@
+I found viewgit to be a great drop-in solution for a git web front-end.  However, it was missing some features I'd like.
+
+The most notable change is the integration of datatables which helps sort and filter data.
+
+I made some minor changes to the styles and sorted the directory structure a little bit differently.
+
+This isn't "complete" but it is "stable".  Feel free to use, make requests, express your love or hate.
+
+Major thanks to Heikki Hokkanen <hoxu at users.sf.net>, who wrote the original code base.

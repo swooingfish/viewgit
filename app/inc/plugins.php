@@ -25,11 +25,11 @@ class VGPlugin
 	 */
 	function display_template($template, $with_headers = true) {
 		if ($with_headers) {
-			require 'templates/header.php';
+			require 'app/templates/header.php';
 		}
 		require "$template";
 		if ($with_headers) {
-			require 'templates/footer.php';
+			require 'app/templates/footer.php';
 		}
 	}
 

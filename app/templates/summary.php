@@ -1,16 +1,16 @@
 <?php
-require_once('templates/shortlog.php');
+require_once('app/templates/shortlog.php');
 ?>
 
 <?php
-require_once('templates/tags.php');
+require_once('app/templates/tags.php');
 ?>
 
 <p><a href="<?php echo makelink(array('a' => 'tags', 'p' => $page['project'])) ?>">View all tags</a></p>
 
 <h1>Heads</h1>
 
-<table class="heads">
+<table class="heads data">
 <thead>
 <tr>
 	<th class="date">Date</th>
@@ -20,7 +20,6 @@ require_once('templates/tags.php');
 </thead>
 <tbody>
 <?php
-$tr_class = 'even';
 foreach ($page['heads'] as $h) {
 	$tr_class = $tr_class=="odd" ? "even" : "odd";
 	echo "<tr class=\"$tr_class\">\n";

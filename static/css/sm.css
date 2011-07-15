@@ -1,7 +1,7 @@
 /**
- * More polished style for ViewGit
+ * SM theme for viewgit
  *
- * @author John Lawrence <mail@johnlawrence.net>
+ * @author Tyler Mulligan <z@xnz.me>
  */
 body {
 	font-family: "Helvetica", Arial, sans-serif;
@@ -68,37 +68,6 @@ h1 a {
 	text-decoration: none;
 }
 
-h2 {
-	font-size: 115%;
-}
-
-table {
-	width: 100%;
-	border-collapse: collapse;
-}
-
-table tr.even {
-	background-color: #f8f8f8;
-	border-bottom: 1px solid #eee;
-	border-top: 1px solid #eee;
-}
-
-table tr.odd td, table tr.even td {
-	padding: 3px 2px;
-}
-
-table tbody tr:hover {
-	background-color: #e0ffe0;
-}
-
-table th {
-	background-color: #cfcfcf;
-	text-align: left;
-	border-bottom: 1px solid #666;
-	border-top: 1px solid #666;
-	padding: 6px 2px;
-}
-
 .notices {
 	padding-left: 1em;
 	margin: 0;
@@ -125,7 +94,8 @@ table th {
 	font-size: 1.4em;
 	padding: 20px;
 	margin: 0;
-	background:#333 url('images/viewgit.png') no-repeat 98% 50%;
+	/*background:#333 url('images/viewgit.png') no-repeat 98% 50%;*/
+	background-color:#333;
 	border-bottom: 1px solid #000;
 	color: #eee;
 }
@@ -197,6 +167,13 @@ span.tag {
 	border-bottom: 1px solid #990;
 }
 
+span.diffline a {
+    	display: block;
+	background-color:#eee;
+	margin-top: 20px;
+	padding: 10px;
+}
+
 /* summary template */
 
 table.shortlog th.date {
@@ -228,10 +205,12 @@ div.diff {
 
 .diff .add {
 	color: green;
+	background-color:#efe;
 }
 
 .diff .del {
 	color: red;
+	background-color:#fee;
 }
 
 .diff .pos {
@@ -264,9 +243,29 @@ table.tree .blob a.item_name{
 /* viewblob template */
 .file {
 	border:1px solid #999;
-	background:#ddd;
+	background:#ffe;
 	padding: 0 0.5em;
 	margin: 0.5em;
 	font-size: 1.2em;
 }
 
+/* float clearing for IE6 */
+* html .clearfix{
+  height: 1%;
+  overflow: visible;
+}
+
+/* float clearing for IE7 */
+*+html .clearfix{
+  min-height: 1%;
+}
+
+/* float clearing for everyone else */
+.clearfix:after{
+  clear: both;
+  content: ".";
+  display: block;
+  height: 0;
+  visibility: hidden;
+  font-size: 0;
+}

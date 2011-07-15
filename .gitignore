@@ -1,2 +1,4 @@
-inc/localconfig.php
+app/inc/localconfig.php
 .htaccess
+log/
+*.swp
